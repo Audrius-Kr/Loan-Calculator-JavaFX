@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.RadioButton?>
+<?import javafx.scene.control.ScrollBar?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Slider?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Font?>
+
+<ScrollPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefViewportHeight="800.0" prefViewportWidth="1280.0" prefWidth="1280.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.antrauzd1.HelloController">
+   <content>
+      <AnchorPane prefHeight="800.0" prefWidth="1280.0">
+         <children>
+            <TextField fx:id="loanAmountField" layoutX="237.0" layoutY="42.0" onAction="#fieldTextToDoubleOrInt" promptText="1000€" />
+            <Label layoutX="37.0" layoutY="39.0" text="Paskolos suma:">
+               <font>
+                  <Font size="20.0" />
+               </font>
+            </Label>
+            <Slider fx:id="loanTermSlider" blockIncrement="1.0" layoutX="237.0" layoutY="143.0" majorTickUnit="12.0" max="120.0" minorTickCount="1" prefHeight="38.0" prefWidth="411.0" showTickLabels="true" showTickMarks="true" snapToTicks="true" value="1.0" />
+            <Label layoutX="37.0" layoutY="135.0" text="Paskolos terminas">
+               <font>
+                  <Font size="20.0" />
+               </font>
+            </Label>
+            <Label fx:id="loanTermLabel" layoutX="698.0" layoutY="142.0">
+               <font>
+                  <Font size="20.0" />
+               </font>
+            </Label>
+            <Label fx:id="loanAmountError" layoutX="697.0" layoutY="39.0">
+               <font>
+                  <Font size="20.0" />
+               </font>
+            </Label>
+            <RadioButton fx:id="annuity" layoutX="61.0" layoutY="292.0" mnemonicParsing="false" text="Anuiteto">
+               <font>
+                  <Font size="16.0" />
+               </font>
+            </RadioButton>
+            <RadioButton fx:id="linear" layoutX="61.0" layoutY="341.0" mnemonicParsing="false" text="Linijinis">
+               <font>
+                  <Font size="16.0" />
+               </font>
+            </RadioButton>
+            <RadioButton fx:id="annual" layoutX="61.0" layoutY="383.0" mnemonicParsing="false" text="Metinis procentas">
+               <font>
+                  <Font size="16.0" />
+               </font>
+            </RadioButton>
+            <Label layoutX="23.0" layoutY="245.0" text="Pasirinkite paskolos grąžinimo grafiką:">
+               <font>
+                  <Font size="20.0" />
+               </font>
+            </Label>
+            <TableView fx:id="paymentTable" layoutX="392.0" layoutY="437.0" prefHeight="482.0" prefWidth="612.0">
+              <columns>
+                <TableColumn fx:id="monthlyPayment" prefWidth="152.0" text="Mėnesinė įmoka" />
+              </columns>
+               <columnResizePolicy>
+                  <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+               </columnResizePolicy>
+            </TableView>
+            <ScrollBar layoutX="1259.0" layoutY="6.0" orientation="VERTICAL" prefHeight="789.0" prefWidth="14.0" />
+         </children>
+      </AnchorPane>
+   </content>
+</ScrollPane>
