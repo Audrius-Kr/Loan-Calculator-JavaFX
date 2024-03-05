@@ -1,9 +1,16 @@
 package org.example.antrauzd1;
 
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.util.Callback;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class HelloController {
     @FXML
@@ -29,6 +36,8 @@ public class HelloController {
     Double APR = 0.06;
     Loan loan;
     String method;
+    @FXML
+    TableColumn<Double, Double> paymentColumn;
 
 
 
@@ -59,19 +68,24 @@ public class HelloController {
             if ((months >= 10) || (months < 1)) {monthString = "mėnesių";}
             return String.format("%d %s %d %s",years, yearString, months, monthString);
         }, loanTermSlider.valueProperty()));
+        paymentColumn = new TableColumn<>("Periodic payment");
+        paymentColumn.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue()));
+        List<TableColumn<Double, Double>> columns = new ArrayList<>();
+        columns.add(paymentColumn);
+        paymentTable.getColumns().setAll(columns);
     }
     void checkIfAllInputProvided() {
         fieldTextToDoubleOrInt();
         boolean paymentModeSelected = paymentMode.getSelectedToggle() != null;
         boolean amountProvided = loanAmount != null;
-        boolean termProvided = loanTermSlider.getValue() > loanTermSlider.getMin();
+        boolean termProvided = loanTermSlider.getValue() > 0;
 
         if (paymentModeSelected && amountProvided && termProvided) {
             System.out.println(loanAmount);
             RadioButton selectedMethod = (RadioButton) paymentMode.getSelectedToggle();
             method = selectedMethod.getId();
             System.out.println(loanTermSlider.getValue());
-            loan = new Loan(interestRate, loanAmount, loanTermSlider.getValue(), APR);
+            loan = new Loan(interestRate, loanAmount, loanTermSlider.getValue());
             paymentList = loan.generatePaymentList(method);
             paymentTable.setItems(paymentList);
 
