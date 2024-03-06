@@ -17,8 +17,8 @@ public class Payment {
     LocalDate paymentDate;
      int paymentNumber;
 
-     StringProperty rawPaymentFraction;
-     StringProperty interestFraction ;
+     DoubleProperty rawPaymentFraction;
+     DoubleProperty interestFraction ;
      DoubleProperty totalPayment;
      DoubleProperty unpaidLoan;
 
@@ -36,10 +36,9 @@ public class Payment {
         double periodicPayment = (r * principal) / (1 - Math.pow(1 + r, -duration));
         double updatedPrincipalPayment = (r * getUnpaidLoan()) / (1 - Math.pow(1 + r, -duration));
         setTotalPayment(periodicPayment);
-        setInterestFraction(NumberFormatter.doubleToPercentageString((((interestRate / PERIOD * principal) / periodicPayment))));
-        Double interestFraction = parsePercentage(getInterestFraction());
-        setRawPaymentFraction(NumberFormatter.doubleToPercentageString((1- interestFraction)  ));
-        setUnpaidLoan(unpaidLoan.getValue() - (periodicPayment - (interestFraction * updatedPrincipalPayment)));
+        setInterestFraction((((interestRate / PERIOD * principal) / periodicPayment) * updatedPrincipalPayment));
+        setRawPaymentFraction(periodicPayment - getInterestFraction());
+        setUnpaidLoan(unpaidLoan.getValue() - (periodicPayment - ((interestRate / PERIOD * principal) / periodicPayment) * updatedPrincipalPayment));
 
 
 
@@ -48,20 +47,20 @@ public class Payment {
     void calculateLinearPayment() {
         double monthlyInterestRate = interestRate / PERIOD;
         double periodicPayment = (principal / duration) + (getUnpaidLoan() * monthlyInterestRate);
-        setInterestFraction(NumberFormatter.doubleToPercentageString(((getUnpaidLoan() * monthlyInterestRate) / periodicPayment) ));
-        setTotalPayment((principal / duration) + ((principal - getUnpaidLoan()) * monthlyInterestRate));
-        setRawPaymentFraction(NumberFormatter.doubleToPercentageString(((principal / duration) / periodicPayment)));
+        setInterestFraction(((getUnpaidLoan() * monthlyInterestRate) ));
+        setTotalPayment(periodicPayment);
+        setRawPaymentFraction(periodicPayment - getInterestFraction());
         setUnpaidLoan(unpaidLoan.getValue() - (principal / duration));
     }
 
 
-    public StringProperty interestFractionProperty() {
-        if (interestFraction == null) interestFraction = new SimpleStringProperty(this, "interestPaid");
+    public DoubleProperty interestFractionProperty() {
+        if (interestFraction == null) interestFraction = new SimpleDoubleProperty(this, "interestPaid");
         return interestFraction;
     }
 
-    public StringProperty rawPaymentFractionProperty() {
-        if (rawPaymentFraction == null) rawPaymentFraction = new SimpleStringProperty(this, "rawPayment");
+    public DoubleProperty rawPaymentFractionProperty() {
+        if (rawPaymentFraction == null) rawPaymentFraction = new SimpleDoubleProperty(this, "rawPayment");
         return rawPaymentFraction;
     }
 
@@ -73,14 +72,14 @@ public class Payment {
         if (totalPayment == null) totalPayment = new SimpleDoubleProperty(this, "totalPayment");
         return totalPayment;
     }
-    public void setInterestFraction(String value) { interestFractionProperty().set(value); }
+    public void setInterestFraction(Double value) { interestFractionProperty().set(value); }
     public void setTotalPayment(Double value) { totalPaymentProperty().set(value); }
-    public void setRawPaymentFraction(String value) { rawPaymentFractionProperty().set(value); }
+    public void setRawPaymentFraction(Double value) { rawPaymentFractionProperty().set(value); }
     public void setUnpaidLoan(Double value) { unpaidLoanProperty().set(value); }
-    public String getInterestFraction() { return interestFractionProperty().get(); }
+    public Double getInterestFraction() { return interestFractionProperty().get(); }
     public Double getTotalPayment() { return totalPaymentProperty().get(); }
 
-    public String getRawPaymentFraction() { return rawPaymentFractionProperty().get(); }
+    public Double getRawPaymentFraction() { return rawPaymentFractionProperty().get(); }
 
     public Double getUnpaidLoan() { return unpaidLoanProperty().get(); }
 

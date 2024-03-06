@@ -132,11 +132,11 @@ public class HelloController {
         loanListGenerator();
         paymentTable.setItems(paymentList);
 
-        TableColumn<Payment, String> rawPaymentCol = new TableColumn<>("Principal percentage");
+        TableColumn<Payment, Double> rawPaymentCol = new TableColumn<>("Principal percentage");
         TableColumn<Payment,LocalDate> dateCol = new TableColumn<>("Date");
         dateCol.setCellValueFactory(new PropertyValueFactory<>("paymentDate"));
         rawPaymentCol.setCellValueFactory(new PropertyValueFactory<>("rawPaymentFraction"));
-        TableColumn<Payment, String> interestFractionCol = new TableColumn<>("Interest percentage");
+        TableColumn<Payment, Double> interestFractionCol = new TableColumn<>("Interest percentage");
         interestFractionCol.setCellValueFactory(new PropertyValueFactory<>("interestFraction"));
         TableColumn<Payment, Double> unpaidLoanCol = new TableColumn<>("UnpaidLoan");
         unpaidLoanCol.setCellValueFactory(new PropertyValueFactory<>("unpaidLoan"));
@@ -144,6 +144,10 @@ public class HelloController {
         TableColumn<Payment, Double> totalPaymentCol = new TableColumn<>("Payment Sum");
         totalPaymentCol.setCellValueFactory(new PropertyValueFactory<>("totalPayment"));
         totalPaymentCol.setCellFactory(Utils.getRoundedCellFactory());
+        rawPaymentCol.setCellFactory(Utils.getRoundedCellFactory());
+        rawPaymentCol.setCellFactory(Utils.getRoundedCellFactory());
+        interestFractionCol.setCellFactory(Utils.getRoundedCellFactory());
+
 
         paymentTable.getColumns().setAll(dateCol,totalPaymentCol, rawPaymentCol, interestFractionCol, unpaidLoanCol);
 
@@ -214,21 +218,22 @@ public class HelloController {
             paymentCount = payment.getPaymentNumber();
             payment.setPaymentDate(currentDate);
             currentDate = currentDate.plusMonths(1);
+if(delayStartValue != null && delayEndValue != null) {
+    if (!currentDate.isBefore(delayStartValue) && !currentDate.isAfter(delayEndValue)) {
+        // Skip payments within the pause period
+    } else {
+        // Normal payment processing
+        // Increase payment amount if after the pause period
+        if (currentDate.isAfter(delayEndValue)) {
+            long monthsDelayed = ChronoUnit.MONTHS.between(delayEndValue, currentDate);
+            double adjustmentFactor = Math.pow(DELAY_RATE, monthsDelayed);
 
-            if(delayStart)
-            if (!currentDate.isBefore(delayStartValue) && !currentDate.isAfter(delayEndValue)) {
-                // Skip payments within the pause period
-            } else {
-                // Normal payment processing
-                // Increase payment amount if after the pause period
-                if(currentDate.isAfter(delayEndValue)){
-                    long monthsDelayed = ChronoUnit.MONTHS.between(delayEndValue, currentDate);
-                    double adjustmentFactor = Math.pow(DELAY_RATE, monthsDelayed);
-
-                    payment.setTotalPayment(payment.getTotalPayment() * (1 +adjustmentFactor));
-                }
+            payment.setTotalPayment(payment.getTotalPayment() * (1 + adjustmentFactor));
+        }
+    }
+}
                 paymentList.add(payment);
-            }
+
         }
 
     }
