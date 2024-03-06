@@ -1,19 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.RadioButton?>
 <?import javafx.scene.control.ScrollBar?>
 <?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.Slider?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.Pane?>
 <?import javafx.scene.text.Font?>
 
 <ScrollPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefViewportHeight="800.0" prefViewportWidth="1280.0" prefWidth="1280.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.antrauzd1.HelloController">
    <content>
-      <AnchorPane prefHeight="800.0" prefWidth="1280.0">
+      <AnchorPane prefHeight="2571.0" prefWidth="1284.0">
          <children>
             <TextField fx:id="loanAmountField" layoutX="237.0" layoutY="42.0" onAction="#fieldTextToDoubleOrInt" promptText="1000€" />
             <Label layoutX="37.0" layoutY="39.0" text="Paskolos suma:">
@@ -21,8 +25,8 @@
                   <Font size="20.0" />
                </font>
             </Label>
-            <Slider fx:id="loanTermSlider" blockIncrement="1.0" layoutX="237.0" layoutY="143.0" majorTickUnit="12.0" max="120.0" minorTickCount="1" prefHeight="38.0" prefWidth="411.0" showTickLabels="true" showTickMarks="true" snapToTicks="true" value="1.0" />
-            <Label layoutX="37.0" layoutY="135.0" text="Paskolos terminas">
+            <Slider fx:id="loanTermSlider" blockIncrement="1.0" layoutX="252.0" layoutY="146.0" majorTickUnit="12.0" max="480.0" minorTickCount="1" prefHeight="38.0" prefWidth="411.0" showTickLabels="true" showTickMarks="true" snapToTicks="true" value="1.0" />
+            <Label layoutX="37.0" layoutY="135.0" text="Paskolos terminas (mėn)">
                <font>
                   <Font size="20.0" />
                </font>
@@ -47,11 +51,6 @@
                   <Font size="16.0" />
                </font>
             </RadioButton>
-            <RadioButton fx:id="annual" layoutX="61.0" layoutY="383.0" mnemonicParsing="false" text="Metinis procentas">
-               <font>
-                  <Font size="16.0" />
-               </font>
-            </RadioButton>
             <Label layoutX="23.0" layoutY="245.0" text="Pasirinkite paskolos grąžinimo grafiką:">
                <font>
                   <Font size="20.0" />
@@ -66,6 +65,43 @@
                </columnResizePolicy>
             </TableView>
             <ScrollBar layoutX="1259.0" layoutY="6.0" orientation="VERTICAL" prefHeight="789.0" prefWidth="14.0" />
+            <Label layoutX="563.0" layoutY="230.0" text="Filtravimo intervalas mėnesiais">
+               <font>
+                  <Font size="20.0" />
+               </font>
+            </Label>
+            <Label fx:id="intervalError" layoutX="988.0" layoutY="272.0" prefHeight="17.0" prefWidth="16.0" />
+            <TextField fx:id="intervalFilterField" layoutX="707.0" layoutY="263.0" onAction="#applyFilter" promptText="Filtruoti kas 2 mėn">
+               <font>
+                  <Font size="16.0" />
+               </font>
+            </TextField>
+            <Pane fx:id="chartContainer" layoutX="443.0" layoutY="1315.0" prefHeight="200.0" prefWidth="200.0" />
+            <Button fx:id="saveButton" layoutX="942.0" layoutY="1071.0" mnemonicParsing="false" onAction="#saveToFile" text="Save to file">
+               <font>
+                  <Font name="Yu Gothic Light" size="20.0" />
+               </font>
+            </Button>
+            <DatePicker fx:id="delayStart" layoutX="785.0" layoutY="110.0" />
+            <Separator layoutX="704.0" orientation="VERTICAL" prefHeight="200.0" />
+            <Separator layoutX="706.0" layoutY="200.0" prefHeight="2.0" prefWidth="554.0" />
+            <DatePicker fx:id="delayEnd" layoutX="1056.0" layoutY="110.0" />
+            <Label layoutX="959.0" layoutY="31.0" text="Paskolos atidėjimas">
+               <font>
+                  <Font size="21.0" />
+               </font>
+            </Label>
+            <Label layoutX="739.0" layoutY="69.0" text="Pradžia">
+               <font>
+                  <Font size="14.0" />
+               </font>
+            </Label>
+            <Label layoutX="1049.0" layoutY="71.0" text="Pabaiga">
+               <font>
+                  <Font size="14.0" />
+               </font>
+            </Label>
+            <Label fx:id="delayPercentageLabel" layoutX="748.0" layoutY="38.0" text="Label" />
          </children>
       </AnchorPane>
    </content>

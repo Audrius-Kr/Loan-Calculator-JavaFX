@@ -2,17 +2,33 @@ package org.example.antrauzd1;
 
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ReadOnlyObjectWrapper;
-import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.scene.Node;
+import javafx.scene.SnapshotParameters;
+import javafx.scene.chart.LineChart;
+import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.util.Callback;
+import javafx.scene.image.WritableImage;
+import javafx.scene.layout.Pane;
+import javax.imageio.ImageIO;
+import javafx.embed.swing.SwingFXUtils;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 public class HelloController {
+    static final double DELAY_RATE = 0.2;
     @FXML
     private Slider loanTermSlider;
     @FXML
@@ -24,41 +40,55 @@ public class HelloController {
     @FXML
     RadioButton annuity;
     @FXML
+    Label delayPercentageLabel;
+    @FXML
     RadioButton linear;
     @FXML
-    RadioButton annual;
+    Label intervalError;
     @FXML
-    TableView<Double> paymentTable;
+    TextField intervalFilterField;
+    @FXML
+    TableView<Payment> paymentTable;
+    @FXML
+    Pane chartContainer;
+    @FXML
+    DatePicker delayStart;
+    @FXML
+    DatePicker delayEnd;
+    @FXML
+    Button saveButton;
     ToggleGroup paymentMode;
-    ObservableList<Double> paymentList;
+    NumberAxis xAxis;
+
+    NumberAxis yAxis;
+
+    ObservableList<Payment> paymentList;
     Double loanDuration = 0.0;
     Double interestRate = 0.05;
-    Double APR = 0.06;
-    Loan loan;
+    Payment payment;
     String method;
+    boolean inputProvided = false;
+    Double unpaidLoan;
+    LineChart<Number, Number> paymentChart;
     @FXML
-    TableColumn<Double, Double> paymentColumn;
-
-
-
-
+    TableColumn<Payment, Double> paymentColumn;
 
     Double loanAmount; //check if not null
+    Double loanAmountBackup;
 
 
 
     public void initialize() {
         loanAmount = null;
+        loanAmountBackup = null;
         paymentMode = new ToggleGroup();
         annuity.setId("Annuity");
         linear.setId("Linear");
-        annual.setId("APR");
         annuity.setToggleGroup(paymentMode);
         linear.setToggleGroup(paymentMode);
-        annual.setToggleGroup(paymentMode);
-        paymentMode.selectedToggleProperty().addListener((observable, oldValue, newValue) -> checkIfAllInputProvided());
-        loanAmountField.textProperty().addListener((observable, oldValue, newValue) -> checkIfAllInputProvided());
-        loanTermSlider.valueProperty().addListener((observable, oldValue, newValue) -> checkIfAllInputProvided());
+        paymentMode.selectedToggleProperty().addListener((observable, oldValue, newValue) -> mainProcess());
+        loanAmountField.textProperty().addListener((observable, oldValue, newValue) -> mainProcess());
+        loanTermSlider.valueProperty().addListener((observable, oldValue, newValue) -> mainProcess());
         loanTermLabel.textProperty().bind(Bindings.createStringBinding(() -> {
             loanDuration = loanTermSlider.getValue();
             int years = (int) (loanTermSlider.getValue() / 12);
@@ -68,11 +98,10 @@ public class HelloController {
             if ((months >= 10) || (months < 1)) {monthString = "mėnesių";}
             return String.format("%d %s %d %s",years, yearString, months, monthString);
         }, loanTermSlider.valueProperty()));
-        paymentColumn = new TableColumn<>("Periodic payment");
-        paymentColumn.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue()));
-        List<TableColumn<Double, Double>> columns = new ArrayList<>();
-        columns.add(paymentColumn);
-        paymentTable.getColumns().setAll(columns);
+        paymentList = FXCollections.observableArrayList();
+        xAxis = new NumberAxis();
+        yAxis = new NumberAxis();
+
     }
     void checkIfAllInputProvided() {
         fieldTextToDoubleOrInt();
@@ -80,41 +109,171 @@ public class HelloController {
         boolean amountProvided = loanAmount != null;
         boolean termProvided = loanTermSlider.getValue() > 0;
 
-        if (paymentModeSelected && amountProvided && termProvided) {
-            System.out.println(loanAmount);
-            RadioButton selectedMethod = (RadioButton) paymentMode.getSelectedToggle();
-            method = selectedMethod.getId();
-            System.out.println(loanTermSlider.getValue());
-            loan = new Loan(interestRate, loanAmount, loanTermSlider.getValue());
-            paymentList = loan.generatePaymentList(method);
-            paymentTable.setItems(paymentList);
+        if (paymentModeSelected && amountProvided && termProvided) inputProvided = true;
+    }
 
+    @SuppressWarnings("unchecked")
+    @FXML
+    void mainProcess() {
+        checkIfAllInputProvided();
+        if (inputProvided){
+            //LocalDate delayStart
+        loanListGenerator();
+        paymentTable.setItems(paymentList);
+
+        TableColumn<Payment, String> rawPaymentCol = new TableColumn<>("Principal percentage");
+        rawPaymentCol.setCellValueFactory(new PropertyValueFactory<>("rawPaymentFraction"));
+        TableColumn<Payment, String> interestFractionCol = new TableColumn<>("Interest percentage");
+        interestFractionCol.setCellValueFactory(new PropertyValueFactory<>("interestFraction"));
+        TableColumn<Payment, Double> unpaidLoanCol = new TableColumn<>("UnpaidLoan");
+        unpaidLoanCol.setCellValueFactory(new PropertyValueFactory<>("unpaidLoan"));
+        unpaidLoanCol.setCellFactory(Utils.getRoundedCellFactory());
+        TableColumn<Payment, Double> totalPaymentCol = new TableColumn<>("Payment Sum");
+        totalPaymentCol.setCellValueFactory(new PropertyValueFactory<>("totalPayment"));
+        totalPaymentCol.setCellFactory(Utils.getRoundedCellFactory());
+
+        paymentTable.getColumns().setAll(totalPaymentCol, rawPaymentCol, interestFractionCol, unpaidLoanCol);
+
+        xAxis.setLabel("Time (Months");
+        yAxis.setLabel("Payment Amount");
+        paymentChart = new LineChart<>(xAxis, yAxis);
+        paymentChart.setTitle("Anuiteto ir linijinio mokejimu grafiku palyginimas");
+        XYChart.Series<Number, Number> annuitySeries = new XYChart.Series<>();
+        annuitySeries.setName("Annuity");
+        XYChart.Series<Number, Number> linearSeries = new XYChart.Series<>();
+        linearSeries.setName("Linear");
+        this.unpaidLoan = loanAmount;
+        int paymentCount = 0;
+        for (int month = 1; month <= loanDuration; month++) {
+            payment = new Payment(interestRate, loanAmount, loanDuration, unpaidLoan, paymentCount);
+            payment.calculatePaymentGeneral("Annuity");
+            double annuityPayment = payment.getTotalPayment();
+            annuitySeries.getData().add(new XYChart.Data<>(month, annuityPayment));
+            paymentCount = payment.getPaymentNumber();
+            this.unpaidLoan = payment.getUnpaidLoan();
         }
 
+        this.unpaidLoan = loanAmount;
+        paymentCount = 0;
+        for (int month = 1; month <= loanDuration; month++) {
+            payment = new Payment(interestRate, loanAmount, loanDuration, unpaidLoan, paymentCount);
+            payment.calculatePaymentGeneral("Linear");
+            double annuityPayment = payment.getTotalPayment();
+            linearSeries.getData().add(new XYChart.Data<>(month, annuityPayment));
+            paymentCount = payment.getPaymentNumber();
+            this.unpaidLoan = payment.getUnpaidLoan();
+        }
+        paymentChart.getData().addAll(annuitySeries,linearSeries);
+        chartContainer.getChildren().add(paymentChart);
+
     }
+    }
+
     @FXML
     void fieldTextToDoubleOrInt() {
         try {
             this.loanAmount = (double) Integer.parseInt(loanAmountField.getText());
             loanAmountError.setText(" ");
+            unpaidLoan = loanAmount;
         } catch (NumberFormatException e) {
             try {
                 this.loanAmount =  Double.parseDouble(loanAmountField.getText());
                 loanAmountError.setText(" ");
+                unpaidLoan = loanAmount;
             } catch (Exception e1) {
                 loanAmountError.setText("Neteisinga paskolos suma!");
                 this.loanAmount = null;
-                System.out.println(" loan amount set to null");
+                unpaidLoan = null;
             }
         }
 
     }
 
+    public void loanListGenerator() {
+        int paymentCount =0;
+        if(unpaidLoan.doubleValue() == loanAmount.doubleValue()) paymentList.clear();
+        while (paymentCount < loanTermSlider.getValue()) {
+            RadioButton selectedMethod = (RadioButton) paymentMode.getSelectedToggle();
+            method = selectedMethod.getId();
+            payment = new Payment(interestRate, this.loanAmount, loanDuration, unpaidLoan, paymentCount);
+            payment.calculatePaymentGeneral(method);
+            paymentList.add(payment);
+            this.unpaidLoan = payment.getUnpaidLoan();
+            paymentCount = payment.getPaymentNumber();
+            System.out.println(unpaidLoan);
+        }
 
+    }
 
+    @FXML
+    void applyFilter() {
+        int interval;
+        try {
+            interval = Integer.parseInt(intervalFilterField.getText());
+            if (interval > 0) {
+                ObservableList<Payment> filteredList = FXCollections.observableArrayList();
+                for (int i = 0; i < paymentList.size(); i++) {
+                    if ((i % interval) == 0) { // Keep every Nth item
+                        filteredList.add(paymentList.get(i));
+                    }
+                }
+                paymentTable.setItems(filteredList);
+            } else {
+                // Handle invalid input: set back to original list or show an error message
+                paymentTable.setItems(paymentList); // Reset to original list if invalid input
+                intervalError.setText("Neteisinga reikšmė");
+            }
+        } catch (NumberFormatException e) {
+            // Handle case where input is not a number
+            paymentTable.setItems(paymentList); // Reset to original list if invalid input
+            // Optionally, show an error message to the user
+        }
+    }
+    @FXML
+    void saveToFile() {
+        Stage primaryStage = (Stage) saveButton.getScene().getWindow(); // Assumes 'saveButton' is your button's fx:id
 
+        // First, let's save the chart image
+        FileChooser imageFileChooser = new FileChooser();
+        imageFileChooser.setTitle("Save Chart as Image");
+        imageFileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("PNG Files", "*.png"));
+        File imageFile = imageFileChooser.showSaveDialog(primaryStage);
 
+        if (imageFile != null) {
+            saveNodeAsImage(paymentChart, imageFile.getAbsolutePath());
+        }
 
+        // Now, let's save the table data
+        FileChooser csvFileChooser = new FileChooser();
+        csvFileChooser.setTitle("Save Table Data as CSV");
+        csvFileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("CSV Files", "*.csv"));
+        File csvFile = csvFileChooser.showSaveDialog(primaryStage);
 
+        if (csvFile != null) {
+            saveTableDataToCsv(paymentTable, csvFile.getAbsolutePath());
+        }
+    }
 
+    public void saveNodeAsImage(Node node, String filePath) {
+        WritableImage image = node.snapshot(new SnapshotParameters(), null);
+        File file = new File(filePath);
+        try {
+            ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", file);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void saveTableDataToCsv(TableView<Payment> tableView, String filePath) {
+        try (FileWriter writer = new FileWriter(filePath)) {
+            // Write column headers
+            writer.append("Total Payment,Principal Percentage,Interest Percentage,Unpaid Loan\n");
+
+            for (Payment payment : tableView.getItems()) {
+                writer.append(String.format("%f,%s,%s,%f\n", payment.getTotalPayment(), payment.getRawPaymentFraction(), payment.getInterestFraction(), payment.getUnpaidLoan()));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }
