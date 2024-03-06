@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -75,6 +76,9 @@ public class HelloController {
 
     Double loanAmount; //check if not null
     Double loanAmountBackup;
+    LocalDate currentDate;
+    LocalDate delayStartValue;
+    LocalDate delayEndValue;
 
 
 
@@ -117,11 +121,20 @@ public class HelloController {
     void mainProcess() {
         checkIfAllInputProvided();
         if (inputProvided){
-            //LocalDate delayStart
+
+                delayStartValue = delayStart.getValue() == null ? (LocalDate.now().minusDays(1)) : delayStart.getValue();
+                delayEndValue = delayEnd.getValue();
+
+            delayPercentageLabel.setText("Mėnėsinis mokestis: " + DELAY_RATE + "%");
+
+            currentDate = LocalDate.now();
+
         loanListGenerator();
         paymentTable.setItems(paymentList);
 
         TableColumn<Payment, String> rawPaymentCol = new TableColumn<>("Principal percentage");
+        TableColumn<Payment,LocalDate> dateCol = new TableColumn<>("Date");
+        dateCol.setCellValueFactory(new PropertyValueFactory<>("paymentDate"));
         rawPaymentCol.setCellValueFactory(new PropertyValueFactory<>("rawPaymentFraction"));
         TableColumn<Payment, String> interestFractionCol = new TableColumn<>("Interest percentage");
         interestFractionCol.setCellValueFactory(new PropertyValueFactory<>("interestFraction"));
@@ -132,7 +145,7 @@ public class HelloController {
         totalPaymentCol.setCellValueFactory(new PropertyValueFactory<>("totalPayment"));
         totalPaymentCol.setCellFactory(Utils.getRoundedCellFactory());
 
-        paymentTable.getColumns().setAll(totalPaymentCol, rawPaymentCol, interestFractionCol, unpaidLoanCol);
+        paymentTable.getColumns().setAll(dateCol,totalPaymentCol, rawPaymentCol, interestFractionCol, unpaidLoanCol);
 
         xAxis.setLabel("Time (Months");
         yAxis.setLabel("Payment Amount");
@@ -197,10 +210,25 @@ public class HelloController {
             method = selectedMethod.getId();
             payment = new Payment(interestRate, this.loanAmount, loanDuration, unpaidLoan, paymentCount);
             payment.calculatePaymentGeneral(method);
-            paymentList.add(payment);
             this.unpaidLoan = payment.getUnpaidLoan();
             paymentCount = payment.getPaymentNumber();
-            System.out.println(unpaidLoan);
+            payment.setPaymentDate(currentDate);
+            currentDate = currentDate.plusMonths(1);
+
+            if(delayStart)
+            if (!currentDate.isBefore(delayStartValue) && !currentDate.isAfter(delayEndValue)) {
+                // Skip payments within the pause period
+            } else {
+                // Normal payment processing
+                // Increase payment amount if after the pause period
+                if(currentDate.isAfter(delayEndValue)){
+                    long monthsDelayed = ChronoUnit.MONTHS.between(delayEndValue, currentDate);
+                    double adjustmentFactor = Math.pow(DELAY_RATE, monthsDelayed);
+
+                    payment.setTotalPayment(payment.getTotalPayment() * (1 +adjustmentFactor));
+                }
+                paymentList.add(payment);
+            }
         }
 
     }

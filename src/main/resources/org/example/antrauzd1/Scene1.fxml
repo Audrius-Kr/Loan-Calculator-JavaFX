@@ -101,7 +101,7 @@
                   <Font size="14.0" />
                </font>
             </Label>
-            <Label fx:id="delayPercentageLabel" layoutX="748.0" layoutY="38.0" text="Label" />
+            <Label fx:id="delayPercentageLabel" layoutX="748.0" layoutY="38.0" />
          </children>
       </AnchorPane>
    </content>
