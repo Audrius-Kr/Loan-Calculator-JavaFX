@@ -1,7 +1,6 @@
 package org.example.antrauzd1;
 
 import javafx.beans.binding.Bindings;
-import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -18,24 +17,18 @@ import javax.imageio.ImageIO;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.List;
 
 public class HelloController {
-    static final double DELAY_RATE = 0.2;
+    static final double DELAY_RATE = 0.02;
     @FXML
     private Slider loanTermSlider;
     @FXML
     TextField loanAmountField;
-    @FXML
-    Label loanAmountError;
     @FXML
     private Label loanTermLabel;
     @FXML
@@ -45,17 +38,23 @@ public class HelloController {
     @FXML
     RadioButton linear;
     @FXML
+    Label totalAmountLabel;
+    @FXML
     Label intervalError;
     @FXML
     TextField intervalFilterField;
     @FXML
     TableView<Payment> paymentTable;
     @FXML
+    Label monthlyPaymentLabel;
+    @FXML
     Pane chartContainer;
     @FXML
     DatePicker delayStart;
     @FXML
     DatePicker delayEnd;
+    @FXML
+    Label totalInterestLabel;
     @FXML
     Button saveButton;
     ToggleGroup paymentMode;
@@ -107,6 +106,7 @@ public class HelloController {
         yAxis = new NumberAxis();
 
     }
+    @FXML
     void checkIfAllInputProvided() {
         fieldTextToDoubleOrInt();
         boolean paymentModeSelected = paymentMode.getSelectedToggle() != null;
@@ -182,6 +182,8 @@ public class HelloController {
         }
         paymentChart.getData().addAll(annuitySeries,linearSeries);
         chartContainer.getChildren().add(paymentChart);
+        updateResultsSection();
+
 
     }
     }
@@ -190,22 +192,39 @@ public class HelloController {
     void fieldTextToDoubleOrInt() {
         try {
             this.loanAmount = (double) Integer.parseInt(loanAmountField.getText());
-            loanAmountError.setText(" ");
+
             unpaidLoan = loanAmount;
         } catch (NumberFormatException e) {
             try {
                 this.loanAmount =  Double.parseDouble(loanAmountField.getText());
-                loanAmountError.setText(" ");
+
                 unpaidLoan = loanAmount;
             } catch (Exception e1) {
-                loanAmountError.setText("Neteisinga paskolos suma!");
                 this.loanAmount = null;
                 unpaidLoan = null;
             }
         }
 
     }
+    private void updateResultsSection() {
+        if (paymentList.isEmpty()) {
+            return;
+        }
 
+        // Calculate monthly payment (use the first payment as they're all the same for annuity)
+        double monthlyPayment = paymentList.get(0).getTotalPayment();
+        monthlyPaymentLabel.setText(String.format("$%.2f", monthlyPayment));
+
+        // Calculate total repayment amount
+        double totalRepayment = paymentList.stream()
+                .mapToDouble(Payment::getTotalPayment)
+                .sum();
+        totalAmountLabel.setText(String.format("$%.2f", totalRepayment));
+
+        // Calculate total interest amount
+        double totalInterest = totalRepayment - loanAmount;
+        totalInterestLabel.setText(String.format("$%.2f", totalInterest));
+    }
     public void loanListGenerator() {
         int paymentCount =0;
         if(unpaidLoan.doubleValue() == loanAmount.doubleValue()) paymentList.clear();
@@ -224,15 +243,15 @@ if(delayStartValue != null && delayEndValue != null) {
     } else {
         // Normal payment processing
         // Increase payment amount if after the pause period
-        if (currentDate.isAfter(delayEndValue)) {
+        if (currentDate.isAfter(delayEndValue )) {
             long monthsDelayed = ChronoUnit.MONTHS.between(delayEndValue, currentDate);
-            double adjustmentFactor = Math.pow(DELAY_RATE, monthsDelayed);
+            double adjustmentFactor = Math.pow(1+DELAY_RATE, monthsDelayed);
 
             payment.setTotalPayment(payment.getTotalPayment() * (1 + adjustmentFactor));
         }
+        paymentList.add(payment);
     }
-}
-                paymentList.add(payment);
+} else paymentList.add(payment);
 
         }
 
