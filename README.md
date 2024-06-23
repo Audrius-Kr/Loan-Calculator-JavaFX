@@ -10,7 +10,8 @@ A JavaFX application for calculating and visualizing loan repayment schedules.
 - Set loan deferment periods
 - Filter and view payment details in a table
 - Export results as CSV and chart as PNG
-- ![UI screenshot](./Screenshot 2024-06-23 204049.png)
+- ![UI screenshot](./LoanCalculatorJavaFXUI)
+.png)
 
 ## Usage
 
